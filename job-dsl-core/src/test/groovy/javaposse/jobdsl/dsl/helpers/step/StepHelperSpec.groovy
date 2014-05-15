@@ -1,13 +1,11 @@
 package javaposse.jobdsl.dsl.helpers.step
-
 import javaposse.jobdsl.dsl.JobType
 import javaposse.jobdsl.dsl.WithXmlAction
 import javaposse.jobdsl.dsl.WithXmlActionSpec
-import javaposse.jobdsl.dsl.helpers.step.condition.FileExistsCondition
 import spock.lang.Specification
 import spock.lang.Unroll
 
-import static javaposse.jobdsl.dsl.helpers.common.MavenContext.LocalRepositoryLocation.*
+import static javaposse.jobdsl.dsl.helpers.common.MavenContext.LocalRepositoryLocation.LocalToWorkspace
 import static javaposse.jobdsl.dsl.helpers.step.condition.FileExistsCondition.BaseDir.WORKSPACE
 
 public class StepHelperSpec extends Specification {
@@ -647,6 +645,18 @@ public class StepHelperSpec extends Specification {
         def selectorNode7 = context.stepNodes[6].selector[0]
         selectorNode7.attribute('class') == 'hudson.plugins.copyartifact.SpecificBuildSelector'
         selectorNode7.buildNumber[0].value() == '$SOME_PARAMTER'
+
+        when:
+        context.copyArtifacts('upstream', '**/*.xml') {
+            latestSuccessful(true)
+        }
+
+        then:
+        Node selectorNode8 = context.stepNodes[7].selector[0]
+        selectorNode8.attribute('class') == 'hudson.plugins.copyartifact.StatusBuildSelector'
+        selectorNode8.children().size() == 1
+        selectorNode8.stable[0].value() == 'true'
+
     }
 
     def 'call phases with minimal arguments'() {
@@ -789,13 +799,6 @@ public class StepHelperSpec extends Specification {
 
         then:
         1 * mockActions.add(_)
-
-        // TODO Support this notation
-//        when:
-//        helper.steps.shell('ls')
-//
-//        then:
-//        1 * mockActions.add(_)
     }
 
     def 'execute withXml Action'() {
@@ -1494,7 +1497,7 @@ still-another-dsl.groovy'''
 
         then:
         context.stepNodes.size() == 1
-        context.stepNodes[0].with {
+        with(context.stepNodes[0]) {
             name() == 'org.jenkinsci.plugins.ParameterizedRemoteTrigger.RemoteBuildConfiguration'
             children().size() == 14
             token[0].value() == []
@@ -1509,7 +1512,7 @@ still-another-dsl.groovy'''
             parameterList[0].string[0].value() == []
             overrideAuth[0].value() == false
             auth[0].children().size() == 1
-            auth[0].'org.jenkinsci.plugins.ParameterizedRemoteTrigger.Auth'[0].with {
+            with(auth[0].'org.jenkinsci.plugins.ParameterizedRemoteTrigger.Auth'[0]) {
                 children().size() == 3
                 NONE[0].value() == 'none'
                 API__TOKEN[0].value() == 'apiToken'
@@ -1530,7 +1533,7 @@ still-another-dsl.groovy'''
 
         then:
         context.stepNodes.size() == 1
-        context.stepNodes[0].with {
+        with(context.stepNodes[0]) {
             name() == 'org.jenkinsci.plugins.ParameterizedRemoteTrigger.RemoteBuildConfiguration'
             children().size() == 14
             token[0].value() == []
@@ -1547,7 +1550,7 @@ still-another-dsl.groovy'''
             parameterList[0].string[2].value() == 'baz=3'
             overrideAuth[0].value() == false
             auth[0].children().size() == 1
-            auth[0].'org.jenkinsci.plugins.ParameterizedRemoteTrigger.Auth'[0].with {
+            with(auth[0].'org.jenkinsci.plugins.ParameterizedRemoteTrigger.Auth'[0]) {
                 children().size() == 3
                 NONE[0].value() == 'none'
                 API__TOKEN[0].value() == 'apiToken'

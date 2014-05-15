@@ -119,6 +119,7 @@ job(attributes) {
         environmentVariables(closure) // See [[Job Reference]] for details of EnvironmentVariablesContext
         release(closure) // since 1.22, see [[Job Reference]] for details
         preBuildCleanup(closure) // since 1.22
+        logSizeChecker(closure) // since 1.23, see [Job Reference]] for details
     }
     steps {
         shell(String commandStr)
@@ -186,11 +187,13 @@ job(attributes) {
         jshint(pattern, staticAnalysisClosure = null) // See [[Job Reference]] for staticAnalysisClosure syntax, since 1.20
         associatedFiles(String files = null) // since 1.20
         publishRobotFrameworkReports(Closure closure = null) // Since 1.21. See [[Job Reference]] for the closure syntax
-        buildPipelineTrigger(downstreamProjectNames) // since 1.21
+        buildPipelineTrigger(downstreamProjectNames, Closure closure) // since 1.21. Closure support since 1.23
         githubCommitNotifier() // since 1.21
         git(gitPublisherClosure) // since 1.22
         flowdock(String token, flowdockClosure = null) // since 1.23. See [[Job Reference]] for the closure syntax
         flowdock(String[] tokens, flowdockClosure = null) // since 1.23. See [[Job Reference]] for the closure syntax
+        stashNotifier(stashNotifierClosure = null) // since 1.23. See [[Job Reference]] for the closure syntax
+        mavenDeploymentLinker(String regex) // since 1.23
     }
     parameters {
         booleanParam(parameterName, defaultValue, description)
@@ -225,6 +228,7 @@ view(attributes) {  // since 1.21, see [[View Reference]]
         lastFailure()
         lastDuration()
         buildButton()
+        lastBuildConsole() // since 1.23
     }
 
     // BuildPipelineView options

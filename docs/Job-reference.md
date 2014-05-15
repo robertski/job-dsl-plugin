@@ -960,6 +960,45 @@ job {
 
 (since 1.22)
 
+## Log File Size Checker Plugin
+
+```groovy
+job {
+    wrappers {
+        logSizeChecker {
+            maxSize(int size)
+            failBuild(boolean failBuild = true) // optional, defaults to false if omitted
+        }
+    }
+}
+```
+
+Configures the log file size checker plugin. Requires the [LogFileSizeChecker Plugin](https://wiki.jenkins-ci.org/display/JENKINS/Logfilesizechecker+Plugin).
+
+Examples:
+```groovy
+// default configuration using the system wide definition
+job {
+    wrappers {
+        logSizeChecker()
+    }
+}
+```
+
+```groovy
+// using job specific configuration, setting the max log size to 10 MB and fail the build of the log file is larger.
+job {
+    wrappers {
+        logSizeChecker {
+            maxSize(10)
+            failBuild()
+        }
+    }
+}
+```
+
+(since 1.23)
+
 # Build Steps
 
 Adds step block to contain an ordered list of build steps. Cannot be used for jobs with type 'maven'.
@@ -1140,7 +1179,7 @@ job {
 ```groovy
 copyArtifacts(String jobName, String includeGlob, String targetPath = '', boolean flattenFiles = false, boolean optionalAllowed = false, Closure copyArtifactClosure) {
     upstreamBuild(boolean fallback = false) // Upstream build that triggered this job
-    latestSuccessful() // Latest successful build
+    latestSuccessful(boolean stable = false) // Latest successful build
     latestSaved() // Latest saved build (marked "keep forever")
     permalink(String linkName) // Specified by permalink: lastBuild, lastStableBuild
     buildNumber(int buildNumber) // Specific Build
@@ -2271,13 +2310,39 @@ publishRobotFrameworkReports()
 ## Build Pipeline Trigger
 
 ```groovy
-buildPipelineTrigger(String downstreamProjectNames)
+buildPipelineTrigger(String downstreamProjectNames, Closure closure) {
+    parameters { // Parameters closure (Since 1.23)
+        currentBuild() // Current build parameters
+        propertiesFile(String propFile) // Parameters from properties file
+        gitRevision(boolean combineQueuedCommits = false) // Pass-through Git commit that was built
+        predefinedProp(String key, String value) // Predefined properties
+        predefinedProps(Map<String, String> predefinedPropsMap)
+        predefinedProps(String predefinedProps) // Newline separated
+        matrixSubset(String groovyFilter) // Restrict matrix execution to a subset
+        subversionRevision() // Subversion Revision
+    }
+}
 ```
 
-Add a manual triggers for jobs that require intervention prior to execution, e.g. an approval process outside of Jenkins. The argument takes a comma separated list of job names. Requires the [Build Pipeline Plugin](https://wiki.jenkins-ci.org/display/JENKINS/Build+Pipeline+Plugin).
+Add a manual triggers for jobs that require intervention prior to execution, e.g. an approval process outside of
+Jenkins. The argument takes a comma separated list of job names. Requires the
+[Build Pipeline Plugin](https://wiki.jenkins-ci.org/display/JENKINS/Build+Pipeline+Plugin).
+
+The `parameters` closure and the methods inside it are optional, though it makes the most sense to call at least one.
+Each one is relatively self documenting, mapping directly to what is seen in the UI. The `predefinedProp` and
+`predefinedProps` methods are used to accumulate properties, meaning that they can be called multiple times to build a
+superset of properties. They are basically equivalent to the ones defined for `downstreamParameterized()`
+
 
 ```groovy
 buildPipelineTrigger('deploy-cluster-1, deploy-cluster-2')
+```
+
+```groovy
+buildPipelineTrigger('deploy-cluster-1, deploy-cluster-2') {
+    predefinedProp('GIT_COMMIT', '$GIT_COMMIT')
+    predefinedProp('ARTIFACT_BUILD_NUMBER', '$BUILD_NUMBER')
+}
 ```
 
 (Since 1.21)
@@ -2409,6 +2474,71 @@ job {
 
 (Since 1.23)
 
+## StashNotifier Publisher
+
+```groovy
+job {
+    publishers {
+        stashNotifier {
+            commitSha1(String commitSha1) // optional
+            keepRepeatedBuilds(boolean keepRepeatedBuilds = true) // optional, defaults to false if omitted
+        }
+    }
+}
+```
+
+Supports the [Stash Notifier Plugin](https://wiki.jenkins-ci.org/display/JENKINS/StashNotifier+Plugin).
+Uses global Jenkins settings for Stash URL, username, password and unverified SSL certificate handling.
+All parameters are optional. If a method is not called then the plugin default parameter will be used.
+
+Examples:
+
+```groovy
+//The following example will notify Stash using the global Jenkins settings
+job {
+    publishers {
+        stashNotifier()
+    }
+}
+```
+
+```groovy
+// The following example will notify Stash using the global Jenkins settings and sets keepRepeatedBuilds to true
+job {
+    publishers {
+        stashNotifier {
+            keepRepeatedBuilds()
+        }
+    }
+}
+```
+
+(Since 1.23)
+
+## Maven Deployment Linker Publisher
+
+```groovy
+job {
+    publishers {
+        mavenDeploymentLinker(String regex)
+    }
+}
+```
+
+Supports the [Maven Deployment Linker Plugin](https://wiki.jenkins-ci.org/display/JENKINS/Maven+Deployment+Linker).
+
+The following example will create links to all tar.gz build artifacts.
+
+```groovy
+job {
+    publishers {
+        mavenDeploymentLinker('.*.tar.gz')
+    }
+}
+```
+
+(Since 1.23)
+
 # Parameters
 **Note: In all cases apart from File Parameter the parameterName argument can't be null or empty**
 _Note: The Password Parameter is not yet supported. See https://issues.jenkins-ci.org/browse/JENKINS-18141_
@@ -2525,4 +2655,3 @@ Full usage
 ```groovy
 textParam("myParameterName", "my default textParam value", "my description")
 ```
- 

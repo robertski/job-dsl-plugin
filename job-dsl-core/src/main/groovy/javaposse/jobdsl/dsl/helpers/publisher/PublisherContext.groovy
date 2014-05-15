@@ -4,6 +4,7 @@ import javaposse.jobdsl.dsl.WithXmlAction
 import javaposse.jobdsl.dsl.helpers.AbstractContextHelper
 import javaposse.jobdsl.dsl.helpers.Context
 import javaposse.jobdsl.dsl.helpers.common.DownstreamContext
+import javaposse.jobdsl.dsl.helpers.common.BuildPipelineContext
 
 
 class PublisherContext implements Context {
@@ -55,8 +56,6 @@ class PublisherContext implements Context {
      <attachmentsPattern/>
      </hudson.plugins.emailext.ExtendedEmailPublisher>
      * @return
-     * TODO Support list for recipients
-     * TODO Escape XML for all subject and content fields
      */
     def extendedEmail(String recipients = null, Closure emailClosure = null) {
         return extendedEmail(recipients, null, emailClosure)
@@ -392,7 +391,6 @@ class PublisherContext implements Context {
         assert !scpContext.entries.isEmpty(), "Scp publish requires at least one entry"
 
         def nodeBuilder = NodeBuilder.newInstance()
-        // TODO Possibility to update existing publish node
         def publishNode = nodeBuilder.'be.certipost.hudson.plugin.SCPRepositoryPublisher' {
             siteName site
             entries {
@@ -686,7 +684,9 @@ class PublisherContext implements Context {
         publisherNodes << NodeBuilder.newInstance().'hudson.plugins.descriptionsetter.DescriptionSetterPublisher' {
             regexp(regularExpression)
             regexpForFailed(regularExpressionForFailed)
-            delegate.description(description)
+            if (description) {
+                delegate.description(description)
+            }
             if (descriptionForFailed) {
                 delegate.descriptionForFailed(descriptionForFailed)
             }
@@ -941,14 +941,23 @@ class PublisherContext implements Context {
      *
      * <publishers>
      *     <au.com.centrumsystems.hudson.plugin.buildpipeline.trigger.BuildPipelineTrigger>
+     *         <configs>
+     *             <hudson.plugins.parameterizedtrigger.PredefinedBuildParameters>
+     *                 <properties>ARTIFACT_BUILD_NUMBER=$BUILD_NUMBER</properties>
+     *             </hudson.plugins.parameterizedtrigger.PredefinedBuildParameters>
+     *         </configs>
      *         <downstreamProjectNames>acme-project</downstreamProjectNames>
      *     </au.com.centrumsystems.hudson.plugin.buildpipeline.trigger.BuildPipelineTrigger>
      * </publishers>
      */
-    def buildPipelineTrigger(String downstreamProjectNames) {
+    def buildPipelineTrigger(String downstreamProjectNames, Closure closure = null) {
+        BuildPipelineContext buildPipelineContext = new BuildPipelineContext()
+        AbstractContextHelper.executeInContext(closure, buildPipelineContext)
+
         def nodeBuilder = NodeBuilder.newInstance()
         publisherNodes << nodeBuilder.'au.com.centrumsystems.hudson.plugin.buildpipeline.trigger.BuildPipelineTrigger' {
             delegate.downstreamProjectNames(downstreamProjectNames ?: '')
+            configs(buildPipelineContext.parameterNodes)
         }
     }
 
@@ -1088,5 +1097,52 @@ class PublisherContext implements Context {
         // Validate values
         assert tokens != null && tokens.length > 0, "Flowdock publish requires at least one flow token"
         flowdock(tokens.join(','), flowdockPublisherClosure)
+    }
+
+    /**
+     * Configures the StashNotifier plugin.
+     *
+     * <publishers>
+     *     <org.jenkinsci.plugins.stashNotifier.StashNotifier>
+     *         <stashServerBaseUrl/>
+     *         <stashUserName/>
+     *         <stashUserPassword>y1/kpoWAZo+gBl7xAmdWIQ==</stashUserPassword>
+     *         <ignoreUnverifiedSSLPeer>false</ignoreUnverifiedSSLPeer>
+     *         <commitSha1/>
+     *         <includeBuildNumberInKey>false</includeBuildNumberInKey>
+     *     </org.jenkinsci.plugins.stashNotifier.StashNotifier>
+     * </publishers>
+     *
+     * See https://wiki.jenkins-ci.org/display/JENKINS/StashNotifier+Plugin
+     */
+    def stashNotifier(Closure stashNotifierClosure = null) {
+        StashNotifierContext context = new StashNotifierContext()
+        AbstractContextHelper.executeInContext(stashNotifierClosure, context)
+        publisherNodes << NodeBuilder.newInstance().'org.jenkinsci.plugins.stashNotifier.StashNotifier' {
+            stashServerBaseUrl()
+            stashUserName()
+            stashUserPassword()
+            ignoreUnverifiedSSLPeer(false)
+            commitSha1(context.commitSha1)
+            includeBuildNumberInKey(context.keepRepeatedBuilds)
+        }
+    }
+
+    /**
+     *
+     * Configures the Maven Deployment Linker plugin.
+     *
+     * <publishers>
+     *     <hudson.plugins.mavendeploymentlinker.MavenDeploymentLinkerRecorder>
+     *         <regexp>*.tar.gz</regexp>
+     *     </hudson.plugins.mavendeploymentlinker.MavenDeploymentLinkerRecorder>
+     * </publishers
+     *
+     * See https://wiki.jenkins-ci.org/display/JENKINS/Maven+Deployment+Linker
+     */
+    def mavenDeploymentLinker(String regex) {
+        publisherNodes << NodeBuilder.newInstance().'hudson.plugins.mavendeploymentlinker.MavenDeploymentLinkerRecorder' {
+            regexp(regex)
+        }
     }
 }
