@@ -7,6 +7,7 @@ import javaposse.jobdsl.dsl.helpers.MavenHelper
 import javaposse.jobdsl.dsl.helpers.BuildFlowHelper
 import javaposse.jobdsl.dsl.helpers.MatrixHelper
 import javaposse.jobdsl.dsl.helpers.MultiScmContextHelper
+import javaposse.jobdsl.dsl.helpers.promotions.PromotionsContextHelper
 import javaposse.jobdsl.dsl.helpers.ScmContextHelper
 import javaposse.jobdsl.dsl.helpers.publisher.PublisherContextHelper
 import javaposse.jobdsl.dsl.helpers.step.StepContextHelper
@@ -17,10 +18,10 @@ import javaposse.jobdsl.dsl.helpers.wrapper.WrapperContextHelper
 /**
  * DSL element representing a Jenkins job.
  */
+
 class Job extends Item {
     JobManagement jobManagement
 
-    String templateName = null // Optional
     JobType type = null // Required
 
     // The idea here is that we'll let the helpers define their own methods, without polluting this class too much
@@ -36,12 +37,13 @@ class Job extends Item {
     @Delegate BuildFlowHelper helperBuildFlow
     @Delegate BuildParametersContextHelper helperBuildParameters
     @Delegate MatrixHelper helperMatrix
+    @Delegate PromotionsContextHelper helperPromotions
 
     Job(JobManagement jobManagement, Map<String, Object> arguments=[:]) {
+        super(ItemType.JOB)
         this.jobManagement = jobManagement
         def typeArg = arguments['type'] ?: JobType.Freeform
         this.type = (typeArg instanceof JobType) ? typeArg : JobType.find(typeArg)
-
         // Helpers
         helperAuthorization = new AuthorizationContextHelper(withXmlActions, type)
         helperScm = new ScmContextHelper(withXmlActions, type, jobManagement)
@@ -55,6 +57,7 @@ class Job extends Item {
         helperBuildFlow = new BuildFlowHelper(withXmlActions, type)
         helperBuildParameters = new BuildParametersContextHelper(withXmlActions, type)
         helperMatrix = new MatrixHelper(withXmlActions, type)
+        helperPromotions = new PromotionsContextHelper(super.withXmlActions, additionalConfigs, type)
     }
 
     /**
@@ -72,19 +75,10 @@ class Job extends Item {
         name(nameClosure.call().toString())
     }
 
-    Node getNode() {
+    Node getRootNode() {
         Node project = templateName == null ? executeEmptyTemplate() : executeUsing()
 
-        executeWithXmlActions(project)
-
         project
-    }
-
-    void executeWithXmlActions(final Node root) {
-        // Create builder, based on what we already have
-        withXmlActions.each { WithXmlAction withXmlClosure ->
-            withXmlClosure.execute(root)
-        }
     }
 
     private executeUsing() {

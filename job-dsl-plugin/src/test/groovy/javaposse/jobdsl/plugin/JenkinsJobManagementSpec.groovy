@@ -8,6 +8,7 @@ import hudson.model.Failure
 import hudson.model.FreeStyleProject
 import hudson.util.VersionNumber
 import javaposse.jobdsl.dsl.ConfigurationMissingException
+import javaposse.jobdsl.dsl.JobConfig
 import javaposse.jobdsl.dsl.NameNotProvidedException
 import org.junit.Rule
 import org.jvnet.hudson.test.JenkinsRule
@@ -109,9 +110,11 @@ class JenkinsJobManagementSpec extends Specification {
         JenkinsJobManagement jobManagement = new JenkinsJobManagement(
                 new PrintStream(buffer), new EnvVars(), build, LookupStrategy.SEED_JOB
         )
+        JobConfig config = new JobConfig()
+        config.setMainConfig(Resources.toString(getResource('minimal-job.xml'), UTF_8))
 
         when:
-        jobManagement.createOrUpdateConfig('project', Resources.toString(getResource('minimal-job.xml'), UTF_8), true)
+        jobManagement.createOrUpdateConfig('project', config, true)
 
         then:
         jenkinsRule.jenkins.getItemByFullName('/folder/project') != null

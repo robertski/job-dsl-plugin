@@ -2,9 +2,7 @@ package javaposse.jobdsl.dsl
 
 import org.custommonkey.xmlunit.XMLUnit
 import spock.lang.Specification
-
 import java.util.concurrent.atomic.AtomicBoolean
-
 import static org.custommonkey.xmlunit.XMLAssert.assertXMLEqual
 
 class JobTest extends Specification {

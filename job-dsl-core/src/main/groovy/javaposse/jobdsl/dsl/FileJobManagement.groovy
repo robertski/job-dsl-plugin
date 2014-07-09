@@ -37,16 +37,24 @@ class FileJobManagement extends AbstractJobManagement {
 
         try {
             new File(root, jobName + ext).text
-        } catch (IOException ioex) {
+        } catch (IOException e) {
             throw new JobConfigurationNotFoundException(jobName)
         }
     }
 
-    boolean createOrUpdateConfig(String jobName, String config, boolean ignoreExisting)
+    @Override
+    boolean createOrUpdateConfig(String jobName, JobConfig config, boolean ignoreExisting)
         throws NameNotProvidedException, ConfigurationMissingException {
         validateUpdateArgs(jobName, config)
 
-        new File(jobName + ext).write(config)
+        new File(jobName + ext).write(config.mainConfig)
+        for (JobConfigId configId : config.configs.keySet()) {
+            if (configId.type == ItemType.ADDITIONAL) {
+                new File(configId.type
+                        + configId.relativePath.replace('/', '_')
+                        + jobName + ext).write(config.getConfig(configId))
+            }
+        }
         true
     }
 
