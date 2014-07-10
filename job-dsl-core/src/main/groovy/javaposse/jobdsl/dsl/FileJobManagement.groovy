@@ -50,7 +50,7 @@ class FileJobManagement extends AbstractJobManagement {
         new File(jobName + ext).write(config.mainConfig)
         for (JobConfigId configId : config.configs.keySet()) {
             if (configId.type == ItemType.ADDITIONAL) {
-                new File(configId.type
+                new File(configId.type.toString()
                         + configId.relativePath.replace('/', '_')
                         + jobName + ext).write(config.getConfig(configId))
             }

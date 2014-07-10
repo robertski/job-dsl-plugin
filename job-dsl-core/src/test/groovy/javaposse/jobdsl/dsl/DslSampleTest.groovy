@@ -46,14 +46,14 @@ class DslSampleTest extends Specification {
         def firstJob = jm.savedConfigs['promos']
         firstJob != null
         // TODO Review actual results
-        println(firstJob)
+        assertXMLEqual '<?xml version="1.0" encoding="UTF-8"?>' + promotionJobXml, firstJob
 
         // Promotions
         jm.savedConfigsPromotions.size() == 1
         def firstConfigs = jm.savedConfigsPromotions['promos']
         def devConfig = firstConfigs[new JobConfigId(ItemType.ADDITIONAL, 'promotions/dev')]
         // TODO Review actual results
-        println(devConfig)
+        assertXMLEqual '<?xml version="1.0" encoding="UTF-8"?>' + promotionXml, devConfig
     }
 
     def 'use parameters when loading script'() {
@@ -438,5 +438,65 @@ job(type: Maven) {
         </branches>
     </scm>
 </maven2-moduleset>
+'''
+    private final promotionJobXml = '''
+<maven2-moduleset>
+    <actions></actions>
+    <description></description>
+    <keepDependencies>false</keepDependencies>
+    <properties>
+        <hudson.plugins.promoted__builds.JobPropertyImpl plugin='promoted-builds@2.15'>
+            <activeProcessNames>
+                <string>dev</string>
+                <string>test</string>
+            </activeProcessNames>
+        </hudson.plugins.promoted__builds.JobPropertyImpl>
+    </properties>
+    <scm class='hudson.scm.NullSCM'></scm>
+    <canRoam>true</canRoam>
+    <disabled>false</disabled>
+    <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+    <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+    <triggers class='vector'></triggers>
+    <concurrentBuild>false</concurrentBuild>
+    <aggregatorStyleBuild>true</aggregatorStyleBuild>
+    <incrementalBuild>false</incrementalBuild>
+    <perModuleEmail>false</perModuleEmail>
+    <ignoreUpstremChanges>true</ignoreUpstremChanges>
+    <archivingDisabled>false</archivingDisabled>
+    <resolveDependencies>false</resolveDependencies>
+    <processPlugins>false</processPlugins>
+    <mavenValidationLevel>-1</mavenValidationLevel>
+    <runHeadless>false</runHeadless>
+    <publishers></publishers>
+    <buildWrappers></buildWrappers>
+</maven2-moduleset>
+'''
+
+    private final promotionXml = '''
+<hudson.plugins.promoted__builds.PromotionProcess plugin='promoted-builds@2.15'>
+    <actions></actions>
+    <keepDependencies>false</keepDependencies>
+    <properties></properties>
+    <scm class='hudson.scm.NullSCM'></scm>
+    <canRoam>false</canRoam>
+    <disabled>false</disabled>
+    <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+    <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+    <triggers></triggers>
+    <concurrentBuild>false</concurrentBuild>
+    <icon></icon>
+    <conditions>
+        <hudson.plugins.promoted__builds.conditions.ManualCondition>
+            <users>name</users>
+            <parameterDefinitions></parameterDefinitions>
+        </hudson.plugins.promoted__builds.conditions.ManualCondition>
+    </conditions>
+    <buildSteps>
+        <hudson.tasks.Shell>
+            <command>bring nach test</command>
+        </hudson.tasks.Shell>
+    </buildSteps>
+</hudson.plugins.promoted__builds.PromotionProcess>
 '''
 }

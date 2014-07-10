@@ -15,7 +15,7 @@ subprojects {
 
     apply plugin: 'groovy'
     apply plugin: 'maven' // for publishing
-   // apply plugin: 'codenarc'
+    apply plugin: 'codenarc'
 
     sourceCompatibility = 1.6
     targetCompatibility = 1.6

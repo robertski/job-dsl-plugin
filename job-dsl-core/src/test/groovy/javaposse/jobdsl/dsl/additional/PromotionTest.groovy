@@ -6,8 +6,6 @@ import javaposse.jobdsl.dsl.JobManagement
 import org.custommonkey.xmlunit.XMLUnit
 import spock.lang.Specification
 
-import java.util.concurrent.atomic.AtomicBoolean
-
 import static org.custommonkey.xmlunit.XMLAssert.assertXMLEqual
 
 class PromotionTest extends Specification {
@@ -19,7 +17,6 @@ class PromotionTest extends Specification {
         setup:
         Node project = new XmlParser().parse(new StringReader(promotionXml))
         Promotion job = new Promotion(null)
-        AtomicBoolean boolOutside = new AtomicBoolean(true)
 
         when: 'Simple update'
         job.configure { Node node ->
@@ -32,21 +29,20 @@ class PromotionTest extends Specification {
         then:
         project.actions[0].description.text() == 'Test Description'
     }
-    
+
     def 'construct simple Promotions and generate xmls from it'() {
         setup:
-        Node project = new XmlParser().parse(new StringReader(promotionXml))
         JobManagement jm = Mock()
         Job job = new Job(jm, [type: 'maven'])
-        Promotion promotion = new Promotion("dev")
+        Promotion promotion = new Promotion('dev')
 
         when:
         job.additionalConfigs << promotion
-        def configs = job.getAdditionalConfigs()
-        
+        def configs = job.additionalConfigs
+
         def devConfig
         for (AdditionalXmlConfig config : configs) {
-            if (config.configType == ItemType.ADDITIONAL && config.name == "dev") {
+            if (config.configType == ItemType.ADDITIONAL && config.name == 'dev') {
                 devConfig = config
             }
         }
@@ -55,7 +51,7 @@ class PromotionTest extends Specification {
         assertXMLEqual devConfig.xml, promotionXml
     }
 
-    final promotionXml = '''
+    private final promotionXml = '''
 <hudson.plugins.promoted__builds.PromotionProcess plugin="promoted-builds@2.15">
   <actions/>
   <keepDependencies>false</keepDependencies>
