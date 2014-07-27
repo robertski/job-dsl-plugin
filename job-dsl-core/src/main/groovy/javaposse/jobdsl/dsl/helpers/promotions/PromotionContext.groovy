@@ -2,7 +2,6 @@ package javaposse.jobdsl.dsl.helpers.promotions
 
 import javaposse.jobdsl.dsl.helpers.AbstractContextHelper
 import javaposse.jobdsl.dsl.helpers.Context
-import javaposse.jobdsl.dsl.helpers.step.AbstractStepContext
 
 class PromotionContext implements Context {
 
@@ -31,7 +30,7 @@ class PromotionContext implements Context {
 
     def actions(Closure actionsClosure) {
         // delegate to ConditionsContext
-        AbstractStepContext actionsContext = new AbstractStepContext()
+        PromotionStepContext actionsContext = new PromotionStepContext()
         AbstractContextHelper.executeInContext(actionsClosure, actionsContext)
         actionsContext.stepNodes.each { actions << it }
     }
