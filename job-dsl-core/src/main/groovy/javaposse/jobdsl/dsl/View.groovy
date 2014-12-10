@@ -32,7 +32,7 @@ abstract class View extends Item {
         }
     }
 
-    def configure(Closure withXmlClosure) {
+    void configure(Closure withXmlClosure) {
         withXmlActions.add(new WithXmlAction(withXmlClosure))
     }
 
